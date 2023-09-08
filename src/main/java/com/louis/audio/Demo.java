@@ -2,6 +2,7 @@ package com.louis.audio;
 
 import javax.sound.sampled.AudioFileFormat;
 import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
@@ -32,6 +33,8 @@ public class Demo {
             sourceDataLine.start();
             System.out.println("播放中");
 
+            AudioInputStream ais = new AudioInputStream(targetDataLine);
+
             //开子线程进行播放
             byte[] b = new byte[1024];//缓存音频数据
             new Thread(new Runnable() {
@@ -51,14 +54,20 @@ public class Demo {
                 @Override
                 public void run() {
                     try {
-                        Thread.sleep(5000);
+                        Thread.sleep(3000);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
 
                     stopped = true;
 
-                    // AudioSystem.write(ais, AudioFileFormat.Type.WAVE, new File(filePath));
+                    try {
+                        AudioSystem.write(ais, AudioFileFormat.Type.WAVE, new File(filePath));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    targetDataLine.stop();
+                    targetDataLine.close();
 
 
                 }

@@ -67,6 +67,7 @@ public class Test4jOCRAPI {
 ```
 
 ### 错误解决方法
+
 报这个错 mac Unable to load library 'tesseract': Native library (darwin/libtesseract.dylib)
 可以使用下面的方法解决该错误
 
