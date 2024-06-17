@@ -1,15 +1,18 @@
 package com.louis.pdf;
 
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
+import javax.imageio.ImageIO;
+import org.apache.pdfbox.multipdf.PDFMergerUtility;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.rendering.PDFRenderer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.InputStream;
 
 /**
  * @date : 2021/9/23
@@ -177,6 +180,26 @@ public class PdfUtils {
         } catch (Exception e) {
             logger.error("PDF转图片失败:{}", e);
             e.printStackTrace();
+        }
+    }
+
+    public static void pdfMerge(List<File> filesWaitingMerge, String destinationFilePath) {
+        PDFMergerUtility pdfMergerUtility = new PDFMergerUtility();
+        pdfMergerUtility.setDestinationFileName(destinationFilePath);
+
+        try {
+            for (File file : filesWaitingMerge) {
+                pdfMergerUtility.addSource(file);
+            }
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+
+        try {
+            pdfMergerUtility.mergeDocuments(null);
+            System.out.println("PDF merge successful");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 }

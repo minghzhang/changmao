@@ -24,9 +24,9 @@ public class PdfContents {
     public static void main(String[] args) throws IOException {
         PdfContents pdfContents = new PdfContents();
 
-        Content content = getContent();
-        String inputPdfPath = "/Users/landon.zhang/Downloads/oxford_word_skills_idioms_and_phrasal_verbs_-_intermediate copy.pdf";
-        String outputPdfPath = "output.pdf";
+        Content content = getContent("ielts_speaking.json");
+        String inputPdfPath = "/Users/landon.zhang/Downloads/会让你在IELTS写作与口语考试中更像一个Native.pdf";
+        String outputPdfPath = "output_1.pdf";
         pdfContents.addTableContents(content, inputPdfPath, outputPdfPath);
     }
 
@@ -47,8 +47,11 @@ public class PdfContents {
             for (ContentItem contentItem : content.getItem()) {
                 SubContentItem parentItem = contentItem.getParentItem();
 
-                PDOutlineItem parentChapter = createOutlineItem(parentItem.getTitle(), document, parentItem.getPageNumber());
-                rootItem.addLast(parentChapter);
+                PDOutlineItem parentChapter = null;
+                if (parentItem != null) {
+                    parentChapter = createOutlineItem(parentItem.getTitle(), document, parentItem.getPageNumber());
+                    rootItem.addLast(parentChapter);
+                }
 
                 List<SubContentItem> subContentItems = contentItem.getContentItems();
                 if (subContentItems == null) {
@@ -56,7 +59,9 @@ public class PdfContents {
                 }
                 for (SubContentItem subContentItem : subContentItems) {
                     PDOutlineItem subChapter = createOutlineItem(subContentItem.getTitle(), document, subContentItem.getPageNumber());
-                    parentChapter.addLast(subChapter);
+                    if (parentChapter != null) {
+                        parentChapter.addLast(subChapter);
+                    }
                 }
             }
 
@@ -69,8 +74,8 @@ public class PdfContents {
         }
     }
 
-    private static Content getContent() throws IOException {
-        String contentString = FileUtils.readFileToString(new File("json/contents.json"),
+    private static Content getContent(String contentJsonName) throws IOException {
+        String contentString = FileUtils.readFileToString(new File("json/" + contentJsonName),
                 Charsets.UTF_8);
         Content content = JSON.parseObject(contentString, Content.class);
         System.out.println(JSON.toJSON(content));
