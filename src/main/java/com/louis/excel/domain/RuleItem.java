@@ -6,10 +6,14 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.Collections;
+import java.util.List;
+
 @Slf4j
 @Data
 @AllArgsConstructor
 public class RuleItem {
+    private String countryCode;
 
     private int rowNum;
 
@@ -36,8 +40,12 @@ public class RuleItem {
     //B2B host not in country and B2C attendee in country
     //B2B host not in country and B2B attendee in country
 
-    public InvoiceItem transferToInvoiceItem() {
-        return RuleParser.transferToInvoiceItem(key);
+    public List<InvoiceItem> transferToInvoiceItems() {
+        if (!checkRuleItemValueYOrNPassed()) {
+            log.error("value content is unexpected, ruleItem: {}", this);
+            return Collections.EMPTY_LIST;
+        }
+        return RuleParser.transferToInvoiceItems(key, value, countryCode);
     }
 
     /**解析规则
