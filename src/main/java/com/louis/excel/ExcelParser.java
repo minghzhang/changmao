@@ -92,21 +92,22 @@ public class ExcelParser {
                         attributes.put(attributeName, attributeValue);
                         log.info("attributeName=" + attributeName + ", attributeValue=" + attributeValue);
                         int rowNum = currentRow.getRowNum();
+                        int rowNumberWithPadding = rowNum + 1;
                         if (RuleUtils.isInLiveEventRuleRange(rowNum)) {
                             log.info("isLiveEventRule" + rowNum);
-                            eventRuleItems.addRuleItem(new RuleItem("", rowNum, TaxConstants.LIVE_EVENT_RULE_TAG, attributeName, attributeValue));
+                            eventRuleItems.addRuleItem(new RuleItem("", rowNumberWithPadding, TaxConstants.LIVE_EVENT_RULE_TAG, attributeName, attributeValue));
 
                         } else if (RuleUtils.isInRecordedEventRuleRange(rowNum)) {
                             log.info("isRecordedEventRule" + rowNum);
-                            eventRuleItems.addRuleItem(new RuleItem("", rowNum, TaxConstants.RECORDED_EVENT_RULE_TAG, attributeName, attributeValue));
+                            eventRuleItems.addRuleItem(new RuleItem("", rowNumberWithPadding, TaxConstants.RECORDED_EVENT_RULE_TAG, attributeName, attributeValue));
 
                         } else if (RuleUtils.isInPersonEventRuleRange(rowNum)) {
                             log.info("isInPersonEventRule" + rowNum);
-                            eventRuleItems.addRuleItem(new RuleItem("", rowNum, TaxConstants.IN_PERSON_EVENT_RULE_TAG, attributeName, attributeValue));
+                            eventRuleItems.addRuleItem(new RuleItem("", rowNumberWithPadding, TaxConstants.IN_PERSON_EVENT_RULE_TAG, attributeName, attributeValue));
 
                         } else if (RuleUtils.isInWebinarRuleRange(rowNum)) {
                             log.info("isWebinarEventRule" + rowNum);
-                            eventRuleItems.addRuleItem(new RuleItem("", rowNum, TaxConstants.WEBINAR_EVENT_RULE_TAG, attributeName, attributeValue));
+                            eventRuleItems.addRuleItem(new RuleItem("", rowNumberWithPadding, TaxConstants.WEBINAR_EVENT_RULE_TAG, attributeName, attributeValue));
                         }
                     }
                 }
