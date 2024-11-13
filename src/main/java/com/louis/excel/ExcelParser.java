@@ -1,10 +1,7 @@
 package com.louis.excel;
 
 import com.alibaba.fastjson2.JSON;
-import com.louis.excel.domain.CountryEventRules;
-import com.louis.excel.domain.EventRuleItems;
-import com.louis.excel.domain.EventRules;
-import com.louis.excel.domain.RuleItem;
+import com.louis.excel.domain.*;
 import com.louis.excel.util.RuleUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -25,7 +22,7 @@ public class ExcelParser {
 
     public static void main(String[] args) {
         String newZealandCountry = "New Zealand invoice required - attendee ticket";
-        CountryEventRules countryEventRules = getCountryEventRules(newZealandCountry);
+        CountryEventRules countryEventRules = getCountryEventRules(newZealandCountry, "NZ");
         EventRules invoiceEventRules = countryEventRules.getInvoiceEventRules();
         EventRuleItems eventRuleItems = invoiceEventRules.getEventRuleItems();
         List<RuleItem> liveEventRuleItems = eventRuleItems.getLiveEventRuleItems();
@@ -35,17 +32,55 @@ public class ExcelParser {
                 log.warn("the rule value don't catch, ruleItem: {}", liveEventRuleItem);
             }
         }
-        countryEventRules.checkRuleItemValue();
-        log.info("countryEventRules : {}", JSON.toJSONString(countryEventRules));
+
+        EventRuleItems invoiceEventRuleItems = countryEventRules.getInvoiceEventRules().getEventRuleItems();
+        for (RuleItem liveEventRuleItem : invoiceEventRuleItems.getLiveEventRuleItems()) {
+            List<InvoiceItem> invoiceItemList = liveEventRuleItem.transferToInvoiceItems();
+            log.info("live invoiceRules：{}", JSON.toJSONString(invoiceItemList));
+            for (InvoiceItem invoiceItem : invoiceItemList) {
+                String sql = invoiceItem.generateInsertSql();
+                log.info("insertSql: {}", sql);
+            }
+        }
+
+        for (RuleItem recordedEventRuleItem : invoiceEventRuleItems.getRecordedEventRuleItems()) {
+            List<InvoiceItem> invoiceItemList = recordedEventRuleItem.transferToInvoiceItems();
+            log.info("recorded invoiceRules：{}", JSON.toJSONString(invoiceItemList));
+            for (InvoiceItem invoiceItem : invoiceItemList) {
+                String sql = invoiceItem.generateInsertSql();
+                log.info("insertSql: {}", sql);
+            }
+        }
+
+        for (RuleItem inPersonEventRuleItem : invoiceEventRuleItems.getInPersonEventRuleItems()) {
+            List<InvoiceItem> invoiceItemList = inPersonEventRuleItem.transferToInvoiceItems();
+            log.info("inperson invoiceRules：{}", JSON.toJSONString(invoiceItemList));
+            for (InvoiceItem invoiceItem : invoiceItemList) {
+                String sql = invoiceItem.generateInsertSql();
+                log.info("insertSql: {}", sql);
+            }
+        }
+
+        for (RuleItem webinarEventRuleItem : invoiceEventRuleItems.getWebinarRuleItems()) {
+            List<InvoiceItem> invoiceItemList = webinarEventRuleItem.transferToInvoiceItems();
+            log.info("webinar invoiceRules：{}", JSON.toJSONString(invoiceItemList));
+            for (InvoiceItem invoiceItem : invoiceItemList) {
+                String sql = invoiceItem.generateInsertSql();
+                log.info("insertSql: {}", sql);
+            }
+        }
+
+
+        // log.info("countryEventRules : {}", JSON.toJSONString(countryEventRules));
     }
 
-    public static CountryEventRules getCountryEventRules(String countryName) {
-        List<CountryEventRules> parseEventRulesList = getParseEventRulesList(excelFilePath);
-        return parseEventRulesList.stream().filter(item -> item.getCountry().equals("New Zealand invoice required - attendee ticket"))
+    public static CountryEventRules getCountryEventRules(String countryNameForColumn, String countryCode) {
+        List<CountryEventRules> parseEventRulesList = getParseEventRulesList(excelFilePath, countryCode);
+        return parseEventRulesList.stream().filter(item -> item.getCountry().equals(countryNameForColumn))
                 .findFirst().orElse(new CountryEventRules());
     }
 
-    public static List<CountryEventRules> getParseEventRulesList(String excelFilePath) {
+    public static List<CountryEventRules> getParseEventRulesList(String excelFilePath, String countryCode) {
         List<CountryEventRules> countryEventRulesList = new ArrayList<>();
         try (FileInputStream fis = new FileInputStream(excelFilePath);
              Workbook workbook = new XSSFWorkbook(fis)) {
@@ -95,19 +130,19 @@ public class ExcelParser {
                         int rowNumberWithPadding = rowNum + 1;
                         if (RuleUtils.isInLiveEventRuleRange(rowNum)) {
                             log.info("isLiveEventRule" + rowNum);
-                            eventRuleItems.addRuleItem(new RuleItem("", rowNumberWithPadding, TaxConstants.LIVE_EVENT_RULE_TAG, attributeName, attributeValue));
+                            eventRuleItems.addRuleItem(new RuleItem(countryCode, rowNumberWithPadding, TaxConstants.LIVE_EVENT_RULE_TAG, attributeName, attributeValue));
 
                         } else if (RuleUtils.isInRecordedEventRuleRange(rowNum)) {
                             log.info("isRecordedEventRule" + rowNum);
-                            eventRuleItems.addRuleItem(new RuleItem("", rowNumberWithPadding, TaxConstants.RECORDED_EVENT_RULE_TAG, attributeName, attributeValue));
+                            eventRuleItems.addRuleItem(new RuleItem(countryCode, rowNumberWithPadding, TaxConstants.RECORDED_EVENT_RULE_TAG, attributeName, attributeValue));
 
                         } else if (RuleUtils.isInPersonEventRuleRange(rowNum)) {
                             log.info("isInPersonEventRule" + rowNum);
-                            eventRuleItems.addRuleItem(new RuleItem("", rowNumberWithPadding, TaxConstants.IN_PERSON_EVENT_RULE_TAG, attributeName, attributeValue));
+                            eventRuleItems.addRuleItem(new RuleItem(countryCode, rowNumberWithPadding, TaxConstants.IN_PERSON_EVENT_RULE_TAG, attributeName, attributeValue));
 
                         } else if (RuleUtils.isInWebinarRuleRange(rowNum)) {
                             log.info("isWebinarEventRule" + rowNum);
-                            eventRuleItems.addRuleItem(new RuleItem("", rowNumberWithPadding, TaxConstants.WEBINAR_EVENT_RULE_TAG, attributeName, attributeValue));
+                            eventRuleItems.addRuleItem(new RuleItem(countryCode, rowNumberWithPadding, TaxConstants.WEBINAR_EVENT_RULE_TAG, attributeName, attributeValue));
                         }
                     }
                 }

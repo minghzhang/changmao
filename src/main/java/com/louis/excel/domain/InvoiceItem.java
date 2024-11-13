@@ -1,6 +1,10 @@
 package com.louis.excel.domain;
 
+import com.louis.excel.util.IdGenerator;
 import lombok.Data;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 @Data
 public class InvoiceItem {
@@ -39,4 +43,26 @@ public class InvoiceItem {
 
     //0:Virtual 1:In-Person 2:Hybrid 100:All
     private int ticketOnOfflineType;
+
+
+    public String generateInsertSql() {
+        // 生成 UUID 作为 id
+        String id = IdGenerator.uuid();
+        // 获取当前时间
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String currentTime = dateFormat.format(new Date());
+
+        String attendeeRegionCode = ""; // 空字符串
+        String hostRegionCode = ""; // 空字符串
+
+        // 生成 SQL 语句
+        return String.format("INSERT INTO zm_billing_tax_invoice_rules (" +
+                        "id, attendee_taxid_valid, host_taxid_valid, attendee_country_code, attendee_region_code, " +
+                        "host_country_code, host_region_code, attendee_invoice_eligible, host_invoice_eligible, " +
+                        "ticket_on_offline_type, create_time, modified_time) VALUES (" +
+                        "'%s', %d, %d, '%s', '%s', '%s', '%s', %d, %d, %d, '%s', '%s');",
+                id, attendeeTaxIdValid, hostTaxIdValid, attendeeCountryCode, attendeeRegionCode,
+                hostCountryCode, hostRegionCode, attendeeInvoiceEligible, hostInvoiceEligible,
+                ticketOnOfflineType, currentTime, currentTime);
+    }
 }

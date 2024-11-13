@@ -1,11 +1,10 @@
 package com.louis.excel.util;
 
 import com.louis.excel.domain.InvoiceItem;
-import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.compress.utils.Lists;
+import com.louis.excel.domain.TicketOnOfflineTypeEnum;
 import org.apache.commons.lang3.StringUtils;
 
-import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -25,70 +24,80 @@ public class RuleParser {
     //B2B host not in country and B2B attendee in country
 
     /**
-     *
+     * B2B ⇒ taxid_valid=1
+     * B2C ⇒ taxid_valid=0
+     * <p>
+     * B2CHost  ⇒ host_taxid_valid=0
+     * B2BHost  ⇒ host_taxid_valid=1
+     * B2CAttendee ⇒ attendee_taxid_valid=0
+     * B2BAttendee ⇒ attendee_taxid=1
+     * <p>
+     * Tag:
+     * Live event rules
+     * Recorded event rules
+     * In-Person Event Rules
+     * Webinar Rules
      */
-    public static List<InvoiceItem> transferToInvoiceItems(String rule, String value, String countryCode) {
+    public static List<InvoiceItem> transferToInvoiceItems(String rule, String value, String countryCode, String tag) {
+        rule = rule.toLowerCase();
         if (StringUtils.equalsIgnoreCase(value, "N")) {
             return Collections.EMPTY_LIST;
         }
-        /**
-         *      B2B ⇒ taxid_valid=1
-         *      B2C ⇒ taxid_valid=0
-         *
-         *      B2CHost  ⇒ host_taxid_valid=0
-         *      B2BHost  ⇒ host_taxid_valid=1
-         *      B2CAttendee ⇒ attendee_taxid_valid=0
-         *      B2BAttendee ⇒ attendee_taxid=1
-         */
+        List<InvoiceItem> invoiceItems = new ArrayList<>();
 
-        List<InvoiceItem> invoiceItemList = Lists.newArrayList();
+        // 解析规则
+        boolean isHostB2B = rule.contains("b2b host");
+        boolean isAttendeeB2B = rule.contains("b2b attendee");
+        boolean isHostInCountry = rule.contains("host in country");
+        boolean isAttendeeInCountry = rule.contains("attendee in country");
+        boolean isHostNotInCountry = rule.contains("host not in country");
+        boolean isAttendeeNotInCountry = rule.contains("attendee not in country");
 
-        InvoiceItem invoiceItem = new InvoiceItem();
-        String[] ruleItems = rule.split(" and ");
-        String hostRuleItem = ruleItems[0];
-        String attendeeRuleItem = ruleItems[1];
+        TicketOnOfflineTypeEnum ticketOnOfflineType = parseTag(tag);
 
-        String[] hostInCountries = hostRuleItem.split("in country");
-        boolean hostIsB2C = StringUtils.containsIgnoreCase(hostInCountries[0], "B2C Host");
-        boolean hostIsB2B = StringUtils.containsIgnoreCase(hostInCountries[0], "B2B Host");
+        // 创建第一个 InvoiceItem 实例
+        InvoiceItem item1 = new InvoiceItem();
+        item1.setHostTaxIdValid(isHostB2B ? 1 : 0);
+        item1.setAttendeeTaxIdValid(isAttendeeB2B ? 1 : 0);
+        item1.setHostCountryCode(isHostInCountry ? countryCode : "");
+        item1.setAttendeeCountryCode(isAttendeeInCountry ? countryCode : "");
+        item1.setAttendeeInvoiceEligible(1);
+        item1.setTicketOnOfflineType(ticketOnOfflineType.getCode());
+        invoiceItems.add(item1);
 
-        boolean hostIsNotInCountry = StringUtils.containsIgnoreCase(hostInCountries[0], "not");
-        if (!hostIsNotInCountry) {
-            invoiceItem.setHostCountryCode(countryCode);
-        } else {
-            invoiceItem.setHostCountryCode("");
+        // 如果存在 "not in country"，则创建第二个 InvoiceItem 实例
+        if (isHostNotInCountry || isAttendeeNotInCountry) {
+            InvoiceItem item2 = new InvoiceItem();
+            item2.setHostTaxIdValid(isHostB2B ? 1 : 0);
+            item2.setAttendeeTaxIdValid(isAttendeeB2B ? 1 : 0);
+            item2.setHostCountryCode(countryCode);
+            item2.setAttendeeCountryCode(countryCode);  // 始终设置为指定的 countryCode
+            item2.setAttendeeInvoiceEligible(0);
+            item2.setTicketOnOfflineType(ticketOnOfflineType.getCode());
+            invoiceItems.add(item2);
         }
 
-        String[] attendeeInCountries = attendeeRuleItem.split("in country");
-        boolean attendeeIsB2C = StringUtils.containsIgnoreCase(attendeeInCountries[0], "B2C attendee");
-        boolean attendeeIsB2B = StringUtils.containsIgnoreCase(attendeeInCountries[0], "B2B attendee");
+        return invoiceItems;
+    }
 
-        boolean attendeeIsNotInCountry = StringUtils.containsIgnoreCase(attendeeInCountries[0], "not");
-        if (!attendeeIsNotInCountry) {
-            invoiceItem.setAttendeeCountryCode(countryCode);
-        } else {
-            invoiceItem.setAttendeeCountryCode("");
-        }
-        invoiceItem.setHostTaxIdValid(hostIsB2C ? 0 : (hostIsB2B ? 1 : 0));
-        invoiceItem.setAttendeeTaxIdValid(attendeeIsB2C ? 0 : (attendeeIsB2B ? 1 : 0));
-        invoiceItem.setAttendeeInvoiceEligible(1);
-        invoiceItemList.add(invoiceItem);
-
-        if (hostIsNotInCountry || attendeeIsNotInCountry) {
-            InvoiceItem newInvoiceItem = new InvoiceItem();
-            try {
-                BeanUtils.copyProperties(newInvoiceItem, invoiceItem);
-                newInvoiceItem.setHostCountryCode(countryCode);
-                newInvoiceItem.setAttendeeCountryCode(countryCode);
-                newInvoiceItem.setAttendeeInvoiceEligible(0);
-            } catch (IllegalAccessException e) {
-                throw new RuntimeException(e);
-            } catch (InvocationTargetException e) {
-                throw new RuntimeException(e);
-            }
-            invoiceItemList.add(newInvoiceItem);
+    public static TicketOnOfflineTypeEnum parseTag(String tag) {
+        tag = tag.toLowerCase();
+        if (tag.contains("live")) {
+            return TicketOnOfflineTypeEnum.VIRTUAL;
         }
 
-        return invoiceItemList;
+        if (tag.contains("in-person")) {
+            return TicketOnOfflineTypeEnum.IN_PERSON;
+        }
+
+        //todo
+        if (tag.contains("recorded")) {
+            return TicketOnOfflineTypeEnum.VIRTUAL;
+        }
+        //todo
+        if (tag.contains("webinar")) {
+            return TicketOnOfflineTypeEnum.VIRTUAL;
+        }
+        return null;
     }
 }

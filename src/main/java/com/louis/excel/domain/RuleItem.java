@@ -45,7 +45,7 @@ public class RuleItem {
             log.error("value content is unexpected, ruleItem: {}", this);
             return Collections.EMPTY_LIST;
         }
-        return RuleParser.transferToInvoiceItems(key, value, countryCode);
+        return RuleParser.transferToInvoiceItems(key, value, countryCode, tag);
     }
 
     /**解析规则
