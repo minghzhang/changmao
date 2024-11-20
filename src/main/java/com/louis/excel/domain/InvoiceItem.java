@@ -57,9 +57,9 @@ public class InvoiceItem {
 
         // 生成 SQL 语句
         return String.format("INSERT INTO zm_billing_tax_invoice_rules (" +
-                        "id, attendee_taxid_valid, host_taxid_valid, attendee_country_code, attendee_region_code, " +
-                        "host_country_code, host_region_code, attendee_invoice_eligible, host_invoice_eligible, " +
-                        "ticket_on_offline_type, create_time, modified_time) VALUES (" +
+                        "`id`, `attendee_taxid_valid`, `host_taxid_valid`, `attendee_country_code`, `attendee_region_code`, " +
+                        "`host_country_code`, `host_region_code`, `attendee_invoice_eligible`, `host_invoice_eligible`, " +
+                        "`ticket_on_offline_type`, `create_time`, `modified_time`) VALUES (" +
                         "'%s', %d, %d, '%s', '%s', '%s', '%s', %d, %d, %d, '%s', '%s');",
                 id, attendeeTaxIdValid, hostTaxIdValid, attendeeCountryCode, attendeeRegionCode,
                 hostCountryCode, hostRegionCode, attendeeInvoiceEligible, hostInvoiceEligible,

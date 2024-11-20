@@ -14,7 +14,7 @@ public class IdGenerator {
         if (!uuid.contains("-")) {
             return uuid;
         }
-        log.info("again");
+        //log.info("again");
         return uuid();
     }
 

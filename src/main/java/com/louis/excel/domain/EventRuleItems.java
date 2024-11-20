@@ -3,6 +3,7 @@ package com.louis.excel.domain;
 import com.louis.excel.TaxConstants;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,6 +27,27 @@ public class EventRuleItems {
             case TaxConstants.WEBINAR_EVENT_RULE_TAG -> webinarRuleItems.add(ruleItem);
             default -> log.error("tag is unexpected, tag: {}", tag);
         }
+    }
+
+    public boolean liveEventRuleItemsEqualsToRecordEventRuleItems() {
+        if (CollectionUtils.size(liveEventRuleItems) != CollectionUtils.size(recordedEventRuleItems)) {
+            log.info("size not match, liveEventRuleItems size: {},  recordedEventRuleItems.size: {}", liveEventRuleItems.size(), recordedEventRuleItems.size());
+            return false;
+        }
+
+        int size = CollectionUtils.size(liveEventRuleItems);
+        for (int i = 0; i < size; i++) {
+            RuleItem liveEventRuleItem = liveEventRuleItems.get(i);
+            RuleItem recordEventRuleItem = recordedEventRuleItems.get(i);
+           /* log.info("liveEventRuleItem   index: {}, value: {}", i, liveEventRuleItem);
+            log.info("recordEventRuleItem index: {}, value: {}", i, recordEventRuleItem);*/
+            if (!liveEventRuleItem.equals(recordEventRuleItem)) {
+                log.info("rule item not match, liveEventRuleItem: {}, recordEventRuleItem: {}", liveEventRuleItem, recordEventRuleItem);
+                return false;
+            }
+        }
+
+        return true;
     }
 
 }

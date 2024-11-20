@@ -4,6 +4,7 @@ import com.alibaba.fastjson2.JSON;
 import com.louis.excel.domain.*;
 import com.louis.excel.util.RuleUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -33,9 +34,14 @@ public class ExcelParser {
             }
         }
 
+
         EventRuleItems invoiceEventRuleItems = countryEventRules.getInvoiceEventRules().getEventRuleItems();
         for (RuleItem liveEventRuleItem : invoiceEventRuleItems.getLiveEventRuleItems()) {
             List<InvoiceItem> invoiceItemList = liveEventRuleItem.transferToInvoiceItems();
+            if (CollectionUtils.isEmpty(invoiceItemList)) {
+                continue;
+            }
+            log.info("live RuleItem：{}", JSON.toJSONString(liveEventRuleItem));
             log.info("live invoiceRules：{}", JSON.toJSONString(invoiceItemList));
             for (InvoiceItem invoiceItem : invoiceItemList) {
                 String sql = invoiceItem.generateInsertSql();
@@ -43,17 +49,24 @@ public class ExcelParser {
             }
         }
 
-        for (RuleItem recordedEventRuleItem : invoiceEventRuleItems.getRecordedEventRuleItems()) {
-            List<InvoiceItem> invoiceItemList = recordedEventRuleItem.transferToInvoiceItems();
-            log.info("recorded invoiceRules：{}", JSON.toJSONString(invoiceItemList));
-            for (InvoiceItem invoiceItem : invoiceItemList) {
-                String sql = invoiceItem.generateInsertSql();
-                log.info("insertSql: {}", sql);
+        boolean liveEventRuleItemsEqualsToRecordEventRuleItems = invoiceEventRuleItems.liveEventRuleItemsEqualsToRecordEventRuleItems();
+        log.info("liveEventRuleItemsEqualsToRecordEventRuleItems : {}", liveEventRuleItemsEqualsToRecordEventRuleItems);
+        if (!liveEventRuleItemsEqualsToRecordEventRuleItems) {
+            for (RuleItem recordedEventRuleItem : invoiceEventRuleItems.getRecordedEventRuleItems()) {
+                List<InvoiceItem> invoiceItemList = recordedEventRuleItem.transferToInvoiceItems();
+                log.info("recorded invoiceRules：{}", JSON.toJSONString(invoiceItemList));
+                for (InvoiceItem invoiceItem : invoiceItemList) {
+                    String sql = invoiceItem.generateInsertSql();
+                    log.info("insertSql: {}", sql);
+                }
             }
         }
 
         for (RuleItem inPersonEventRuleItem : invoiceEventRuleItems.getInPersonEventRuleItems()) {
             List<InvoiceItem> invoiceItemList = inPersonEventRuleItem.transferToInvoiceItems();
+            if (CollectionUtils.isEmpty(invoiceItemList)) {
+                continue;
+            }
             log.info("inperson invoiceRules：{}", JSON.toJSONString(invoiceItemList));
             for (InvoiceItem invoiceItem : invoiceItemList) {
                 String sql = invoiceItem.generateInsertSql();
@@ -61,14 +74,14 @@ public class ExcelParser {
             }
         }
 
-        for (RuleItem webinarEventRuleItem : invoiceEventRuleItems.getWebinarRuleItems()) {
+       /* for (RuleItem webinarEventRuleItem : invoiceEventRuleItems.getWebinarRuleItems()) {
             List<InvoiceItem> invoiceItemList = webinarEventRuleItem.transferToInvoiceItems();
             log.info("webinar invoiceRules：{}", JSON.toJSONString(invoiceItemList));
             for (InvoiceItem invoiceItem : invoiceItemList) {
                 String sql = invoiceItem.generateInsertSql();
                 log.info("insertSql: {}", sql);
             }
-        }
+        }*/
 
 
         // log.info("countryEventRules : {}", JSON.toJSONString(countryEventRules));
@@ -125,23 +138,23 @@ public class ExcelParser {
                         String attributeValue = valueCell != null ? valueCell.toString() : "";
 
                         attributes.put(attributeName, attributeValue);
-                        log.info("attributeName=" + attributeName + ", attributeValue=" + attributeValue);
+                        // log.info("attributeName=" + attributeName + ", attributeValue=" + attributeValue);
                         int rowNum = currentRow.getRowNum();
                         int rowNumberWithPadding = rowNum + 1;
                         if (RuleUtils.isInLiveEventRuleRange(rowNum)) {
-                            log.info("isLiveEventRule" + rowNum);
+                            //  log.info("isLiveEventRule" + rowNum);
                             eventRuleItems.addRuleItem(new RuleItem(countryCode, rowNumberWithPadding, TaxConstants.LIVE_EVENT_RULE_TAG, attributeName, attributeValue));
 
                         } else if (RuleUtils.isInRecordedEventRuleRange(rowNum)) {
-                            log.info("isRecordedEventRule" + rowNum);
+                            //   log.info("isRecordedEventRule" + rowNum);
                             eventRuleItems.addRuleItem(new RuleItem(countryCode, rowNumberWithPadding, TaxConstants.RECORDED_EVENT_RULE_TAG, attributeName, attributeValue));
 
                         } else if (RuleUtils.isInPersonEventRuleRange(rowNum)) {
-                            log.info("isInPersonEventRule" + rowNum);
+                            //    log.info("isInPersonEventRule" + rowNum);
                             eventRuleItems.addRuleItem(new RuleItem(countryCode, rowNumberWithPadding, TaxConstants.IN_PERSON_EVENT_RULE_TAG, attributeName, attributeValue));
 
                         } else if (RuleUtils.isInWebinarRuleRange(rowNum)) {
-                            log.info("isWebinarEventRule" + rowNum);
+                            //    log.info("isWebinarEventRule" + rowNum);
                             eventRuleItems.addRuleItem(new RuleItem(countryCode, rowNumberWithPadding, TaxConstants.WEBINAR_EVENT_RULE_TAG, attributeName, attributeValue));
                         }
                     }
@@ -151,7 +164,7 @@ public class ExcelParser {
                     countryEventRulesList.add(previousCountryEventRules);
                     previousCountryEventRules = null;
                 }
-                log.info("countryName=" + countryName + ", attributes=" + attributes);
+                //log.info("countryName=" + countryName + ", attributes=" + attributes);
                 countryData.put(countryName, attributes);
             }
         } catch (IOException e) {

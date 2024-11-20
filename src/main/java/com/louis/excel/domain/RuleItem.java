@@ -8,6 +8,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 @Data
@@ -25,6 +26,23 @@ public class RuleItem {
 
     public boolean checkRuleItemValueYOrNPassed() {
         return StringUtils.equalsIgnoreCase("Y", value) || StringUtils.equalsIgnoreCase("N", value);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true; // 如果是同一个对象，返回 true
+        if (o == null || getClass() != o.getClass()) return false; // 类型不匹配
+        RuleItem ruleItem = (RuleItem) o;
+        // 只比较 countryCode、key 和 value
+        return Objects.equals(countryCode, ruleItem.countryCode) &&
+                Objects.equals(key, ruleItem.key) &&
+                Objects.equals(value, ruleItem.value);
+    }
+
+    @Override
+    public int hashCode() {
+        // 只基于 countryCode、key 和 value 生成哈希值
+        return Objects.hash(countryCode, key, value);
     }
 
     //B2C Host in country and B2C attendee in country
